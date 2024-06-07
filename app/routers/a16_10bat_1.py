@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from logger import Logger
 
-CONFIG_FILELIST_DIFF = "/config/filelist_diff.txt"
+CONFIG_FILELIST_DIFF = "../config/filelist_diff.txt"
 DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
 
 router = APIRouter(prefix="/1split")
@@ -31,13 +31,16 @@ async def a16_10bat_1(body: RequestBody):
                 flag_diff = True
                 break
 
+    bucket = body.Bucket
     if flag_diff:
-        logger.info("差分ファイル")
+        split_file(bucket, file_name)
     else:
-        copy_file(body.Bucket, file_name)
+        copy_file(bucket, file_name)
 
     return
 
+
+def split_file(bucket: str, filename: str):
 
 def copy_file(bucket: str, filename: str):
     storage_client = storage.Client()
