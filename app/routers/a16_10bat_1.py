@@ -1,10 +1,12 @@
+import os
+
 from fastapi import APIRouter
 from google.cloud import storage
 from pydantic import BaseModel
 
 from logger import Logger
 
-CONFIG_FILELIST_DIFF = "../config/filelist_diff.txt"
+CONFIG_FILELIST_DIFF = "app/config/filelist_diff.txt"
 DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
 
 router = APIRouter(prefix="/1split")
@@ -19,12 +21,17 @@ class RequestBody(BaseModel):
 
 @router.post("/")
 async def a16_10bat_1(body: RequestBody):
+
+    # 差分ファイル情報の取得
+    config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILELIST_DIFF)
+    logger.info(config_path)
+
     # 対象ファイル名
     file_name = body.FilePath
 
     # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
     flag_diff = False
-    with open(CONFIG_FILELIST_DIFF, "r") as file:
+    with open(config_path, "r") as file:
         for file_prefix in file:
             file_prefix = file_prefix.strip()
             if file_name.startswith(file_prefix):
