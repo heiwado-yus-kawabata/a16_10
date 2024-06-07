@@ -24,29 +24,37 @@ class RequestBody(BaseModel):
 @router.post("/")
 async def a16_10bat_1(body: RequestBody):
 
+    current_path = os.path.dirname(__file__)
+
+    for root, dirs, files in os.walk(current_path):
+        for file in files:
+            # ファイルパスを作成して表示
+            file_path = os.path.join(root, file)
+            logger.info(file_path)
+
     # 差分ファイル情報の取得
     # config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILELIST_DIFF)
     # logger.info(config_path)
 
-    # 対象ファイル名
-    file_name = body.FilePath
-
-    # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
-    flag_diff = False
-    with open(CONFIG_FILELIST_DIFF, "r") as file:
-        for file_prefix in file:
-            file_prefix = file_prefix.strip()
-            if file_name.startswith(file_prefix):
-                flag_diff = True
-                break
-
-    bucket_name = body.Bucket
-    if flag_diff:
-        split_file(bucket_name, file_name)
-    else:
-        copy_file(bucket_name, file_name)
-
-    return
+    # # 対象ファイル名
+    # file_name = body.FilePath
+    #
+    # # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
+    # flag_diff = False
+    # with open(CONFIG_FILELIST_DIFF, "r") as file:
+    #     for file_prefix in file:
+    #         file_prefix = file_prefix.strip()
+    #         if file_name.startswith(file_prefix):
+    #             flag_diff = True
+    #             break
+    #
+    # bucket_name = body.Bucket
+    # if flag_diff:
+    #     split_file(bucket_name, file_name)
+    # else:
+    #     copy_file(bucket_name, file_name)
+    #
+    # return
 
 
 def split_file(bucket_name: str, file_name: str):
@@ -56,15 +64,40 @@ def split_file(bucket_name: str, file_name: str):
     blob = bucket.blob(file_name)
 
     memory_buf = io.StringIO()
+    index_file = 1
+    index_line = 1
 
-    with blob.open("r") as fs:
-        # 分割行数分読み込む
-        for __ in range(SEPARATE_COUNT):
-            line = fs.readline()
-            if not line:
-                break
-            memory_buf.write(line)
+    with blob.open("r") as file_stream:
+        for line in file_stream:
+            if index_line < SEPARATE_COUNT:
+                # 指定行数以下であればメモリに書き込み
+                memory_buf.write(line)
+                index_line += 1
+            else:
+                # 指定行数を越えた時点で分割してファイル出力
+                split_filenames = file_name.split(".")
+                dst_filename = DST_FILE_FORMAT.format(split_filenames[0], index_file, split_filenames[1])
+                dst_blob = bucket.blob(dst_filename)
+                dst_blob.upload_from_string(memory_buf.getvalue())
+                logger.info(f"{dst_blob.name}生成")
 
+                # ファイルインデックスを増やす
+                index_file += 1
+
+                # 他はクリア
+                index_line = 1
+                memory_buf.seek(0)
+                memory_buf.truncate()
+
+    # 残りをアップロード
+    if memory_buf.tell() > 0:
+        split_filenames = file_name.split(".")
+        dst_filename = DST_FILE_FORMAT.format(split_filenames[0], index_file, split_filenames[1])
+        dst_blob = bucket.blob(dst_filename)
+        dst_blob.upload_from_string(memory_buf.getvalue())
+        logger.info(f"{dst_blob.name}生成")
+
+    memory_buf.close()
 
     return
 
@@ -74,8 +107,8 @@ def copy_file(bucket_name: str, file_name: str):
     bucket = storage_client.bucket(bucket_name)
 
     # コピー先のオブジェクト
-    filenames = file_name.split(".")
-    dst_filename = DST_FILE_FORMAT.format(filenames[0], 1, filenames[1])
+    split_filenames = file_name.split(".")
+    dst_filename = DST_FILE_FORMAT.format(split_filenames[0], 1, split_filenames[1])
     dst_blob = bucket.blob(dst_filename)
 
     src_blob = bucket.blob(file_name)
