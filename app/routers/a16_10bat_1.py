@@ -24,38 +24,25 @@ class RequestBody(BaseModel):
 @router.post("/")
 async def a16_10bat_1(body: RequestBody):
 
-    # current_path = os.path.dirname(__file__)
+    # 対象ファイル名
+    file_name = body.FilePath
 
-    current_path = os.path.dirname("/app/config")
-    for root, dirs, files in os.walk(current_path):
-        for file in files:
-            # ファイルパスを作成して表示
-            file_path = os.path.join(root, file)
-            logger.info(file_path)
+    # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
+    flag_diff = False
+    with open(CONFIG_FILELIST_DIFF, "r") as file:
+        for file_prefix in file:
+            if file_name.startswith(file_prefix.strip()):
+                flag_diff = True
+                logger.info(f"差分連携ファイル")
+                break
 
-    # 差分ファイル情報の取得
-    # config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILELIST_DIFF)
-    # logger.info(config_path)
+    bucket_name = body.Bucket
+    if flag_diff:
+        split_file(bucket_name, file_name)
+    else:
+        copy_file(bucket_name, file_name)
 
-    # # 対象ファイル名
-    # file_name = body.FilePath
-    #
-    # # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
-    # flag_diff = False
-    # with open(CONFIG_FILELIST_DIFF, "r") as file:
-    #     for file_prefix in file:
-    #         file_prefix = file_prefix.strip()
-    #         if file_name.startswith(file_prefix):
-    #             flag_diff = True
-    #             break
-    #
-    # bucket_name = body.Bucket
-    # if flag_diff:
-    #     split_file(bucket_name, file_name)
-    # else:
-    #     copy_file(bucket_name, file_name)
-    #
-    # return
+    return
 
 
 def split_file(bucket_name: str, file_name: str):
