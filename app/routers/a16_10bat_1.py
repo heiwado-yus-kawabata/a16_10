@@ -24,6 +24,8 @@ class RequestBody(BaseModel):
 @router.post("/")
 async def a16_10bat_1(body: RequestBody):
 
+    logger.mem_usage(1)
+
     # 対象ファイル名
     file_name = body.FilePath
 
@@ -37,16 +39,22 @@ async def a16_10bat_1(body: RequestBody):
                 logger.info(f"差分連携ファイル: {file_prefix} with encoding: {encoding}")
                 break
 
+    logger.mem_usage(2)
+
     bucket_name = body.Bucket
     if encoding is not None:
         split_file(bucket_name, file_name, encoding)
     else:
         copy_file(bucket_name, file_name)
 
+    logger.mem_usage(3)
+
     return
 
 
 def split_file(bucket_name: str, file_name: str, file_encoding: str):
+
+    logger.mem_usage(21)
 
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
@@ -56,19 +64,27 @@ def split_file(bucket_name: str, file_name: str, file_encoding: str):
     index_file = 1
     index_line = 1
 
+    logger.mem_usage(22)
+
     with blob.open("rt", encoding=file_encoding) as file_stream:
+
+        logger.mem_usage(23)
+
         for line in file_stream:
             if index_line < SEPARATE_COUNT:
                 # 指定行数以下であればメモリに書き込み
                 memory_buf.write(line)
                 index_line += 1
             else:
+                logger.mem_usage(24)
                 # 指定行数を越えた時点で分割してファイル出力
                 split_filenames = file_name.split(".")
                 dst_filename = DST_FILE_FORMAT.format(split_filenames[0], index_file, split_filenames[1])
                 dst_blob = bucket.blob(dst_filename)
                 dst_blob.upload_from_string(memory_buf.getvalue())
                 logger.info(f"{dst_blob.name}生成")
+
+                logger.mem_usage(25)
 
                 # ファイルインデックスを増やす
                 index_file += 1
@@ -78,6 +94,10 @@ def split_file(bucket_name: str, file_name: str, file_encoding: str):
                 memory_buf.seek(0)
                 memory_buf.truncate()
 
+                logger.mem_usage(26)
+
+        logger.mem_usage(27)
+
     # 残りをアップロード
     if memory_buf.tell() > 0:
         split_filenames = file_name.split(".")
@@ -85,8 +105,10 @@ def split_file(bucket_name: str, file_name: str, file_encoding: str):
         dst_blob = bucket.blob(dst_filename)
         dst_blob.upload_from_string(memory_buf.getvalue())
         logger.info(f"{dst_blob.name}生成")
+        logger.mem_usage(28)
 
     memory_buf.close()
+    logger.mem_usage(29)
 
     return
 
