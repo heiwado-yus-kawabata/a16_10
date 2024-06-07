@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from logger import Logger
 
-CONFIG_FILELIST_DIFF = ".././config/filelist_diff.txt"
+CONFIG_FILELIST_DIFF = "/app/config/filelist_diff.txt"
 DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
 SEPARATE_COUNT = 2000000
 
