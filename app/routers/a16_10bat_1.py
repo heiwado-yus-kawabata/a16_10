@@ -28,16 +28,17 @@ async def a16_10bat_1(body: RequestBody):
     file_name = body.FilePath
 
     # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
-    flag_diff = False
+    encoding = None
     with open(CONFIG_FILELIST_DIFF, "r") as file:
-        for file_prefix in file:
+        for line in file:
+            file_prefix, file_encoding = line.strip().split(',')
             if file_name.startswith(file_prefix.strip()):
-                flag_diff = True
-                logger.info(f"差分連携ファイル")
+                encoding = file_encoding
+                logger.info(f"差分連携ファイル: {file_prefix} with encoding: {encoding}")
                 break
 
     bucket_name = body.Bucket
-    if flag_diff:
+    if encoding is not None:
         split_file(bucket_name, file_name)
     else:
         copy_file(bucket_name, file_name)

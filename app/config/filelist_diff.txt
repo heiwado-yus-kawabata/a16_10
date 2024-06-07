@@ -10,7 +10,7 @@ STRProductStatusDelete
 STRRecipeSKUDetail
 STRSCAN
 STRScanningPriorityManagement
-STRSKU
+STRSKU,CP932
 STRSKUAlcoholCategoryAttribute
 STRSKUGiftAttribute
 STRSKUPricePattern
