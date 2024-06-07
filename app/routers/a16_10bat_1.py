@@ -39,14 +39,14 @@ async def a16_10bat_1(body: RequestBody):
 
     bucket_name = body.Bucket
     if encoding is not None:
-        split_file(bucket_name, file_name)
+        split_file(bucket_name, file_name, encoding)
     else:
         copy_file(bucket_name, file_name)
 
     return
 
 
-def split_file(bucket_name: str, file_name: str):
+def split_file(bucket_name: str, file_name: str, file_encoding: str):
 
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
@@ -56,7 +56,7 @@ def split_file(bucket_name: str, file_name: str):
     index_file = 1
     index_line = 1
 
-    with blob.open("r") as file_stream:
+    with blob.open("rt", encoding=file_encoding) as file_stream:
         for line in file_stream:
             if index_line < SEPARATE_COUNT:
                 # 指定行数以下であればメモリに書き込み
