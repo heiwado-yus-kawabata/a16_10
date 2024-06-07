@@ -6,5 +6,5 @@ RUN pip install -r requirements.txt
 
 COPY ./app /app
 
-ENV PYTHONPATH /app/routers
+ENV PYTHONPATH /app/routers:/app/config
 ENV TIMEOUT 3000

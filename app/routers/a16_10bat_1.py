@@ -25,8 +25,8 @@ class RequestBody(BaseModel):
 async def a16_10bat_1(body: RequestBody):
 
     # current_path = os.path.dirname(__file__)
-    current_path = os.path.dirname("/app")
 
+    current_path = os.path.dirname("/app/config")
     for root, dirs, files in os.walk(current_path):
         for file in files:
             # ファイルパスを作成して表示
