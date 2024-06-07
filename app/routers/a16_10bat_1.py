@@ -41,6 +41,8 @@ async def a16_10bat_1(body: RequestBody):
 
 
 def split_file(bucket: str, filename: str):
+    return
+
 
 def copy_file(bucket: str, filename: str):
     storage_client = storage.Client()
