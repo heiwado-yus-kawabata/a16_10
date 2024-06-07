@@ -1,3 +1,4 @@
+import io
 import os
 
 from fastapi import APIRouter
@@ -6,7 +7,7 @@ from pydantic import BaseModel
 
 from logger import Logger
 
-CONFIG_FILELIST_DIFF = "app/config/filelist_diff.txt"
+CONFIG_FILELIST_DIFF = "../../config/filelist_diff.txt"
 DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
 
 router = APIRouter(prefix="/1split")
@@ -23,8 +24,8 @@ class RequestBody(BaseModel):
 async def a16_10bat_1(body: RequestBody):
 
     # 差分ファイル情報の取得
-    config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILELIST_DIFF)
-    logger.info(config_path)
+    # config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILELIST_DIFF)
+    # logger.info(config_path)
 
     # 対象ファイル名
     file_name = body.FilePath
@@ -38,29 +39,40 @@ async def a16_10bat_1(body: RequestBody):
                 flag_diff = True
                 break
 
-    bucket = body.Bucket
+    bucket_name = body.Bucket
     if flag_diff:
-        split_file(bucket, file_name)
+        split_file(bucket_name, file_name)
     else:
-        copy_file(bucket, file_name)
+        copy_file(bucket_name, file_name)
 
     return
 
 
-def split_file(bucket: str, filename: str):
-    return
+def split_file(bucket_name: str, file_name: str):
 
-
-def copy_file(bucket: str, filename: str):
     storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket)
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+
+    memory_buf = io.StringIO()
+
+    with blob.open("r") as fs:
+        for line in fs:
+            memory_buf.write(line)
+
+    return
+
+
+def copy_file(bucket_name: str, file_name: str):
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
 
     # コピー先のオブジェクト
-    filenames = filename.split(".")
+    filenames = file_name.split(".")
     dst_filename = DST_FILE_FORMAT.format(filenames[0], 1, filenames[1])
     dst_blob = bucket.blob(dst_filename)
 
-    src_blob = bucket.blob(filename)
+    src_blob = bucket.blob(file_name)
     bucket.copy_blob(src_blob, bucket, dst_blob.name)
 
     logger.info(f"{dst_blob.name}生成")
