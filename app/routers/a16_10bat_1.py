@@ -59,12 +59,11 @@ def split_file(bucket_name: str, file_name: str, file_encoding: str):
     with blob.open("rt", encoding=file_encoding) as file_stream:
         for line in file_stream:
 
-            logger.mem_usage(index_line)
-
             if index_line < SEPARATE_COUNT:
                 # 指定行数以下であればメモリに書き込み
                 memory_buf.write(line)
                 index_line += 1
+                logger.mem_usage(index_line)
             else:
                 # 指定行数を越えた時点で分割してファイル出力
                 split_filenames = file_name.split(".")
