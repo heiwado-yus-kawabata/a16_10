@@ -9,6 +9,7 @@ from logger import Logger
 
 CONFIG_FILELIST_DIFF = "../../config/filelist_diff.txt"
 DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
+SEPARATE_COUNT = 2000000
 
 router = APIRouter(prefix="/1split")
 logger = Logger(log_name="a16_10bat")
@@ -32,7 +33,7 @@ async def a16_10bat_1(body: RequestBody):
 
     # ファイル名判定 -> 差分連携ではないなら1ファイルをそのまま置く
     flag_diff = False
-    with open(config_path, "r") as file:
+    with open(CONFIG_FILELIST_DIFF, "r") as file:
         for file_prefix in file:
             file_prefix = file_prefix.strip()
             if file_name.startswith(file_prefix):
@@ -57,8 +58,13 @@ def split_file(bucket_name: str, file_name: str):
     memory_buf = io.StringIO()
 
     with blob.open("r") as fs:
-        for line in fs:
+        # 分割行数分読み込む
+        for __ in range(SEPARATE_COUNT):
+            line = fs.readline()
+            if not line:
+                break
             memory_buf.write(line)
+
 
     return
 
