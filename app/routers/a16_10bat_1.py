@@ -1,9 +1,11 @@
 from fastapi import APIRouter
+from google.cloud import storage
 from pydantic import BaseModel
 
 from logger import Logger
 
 CONFIG_FILELIST_DIFF = "/config/filelist_diff.txt"
+DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
 
 router = APIRouter(prefix="/1split")
 logger = Logger(log_name="a16_10bat")
@@ -17,7 +19,6 @@ class RequestBody(BaseModel):
 
 @router.post("/")
 async def a16_10bat_1(body: RequestBody):
-
     # 対象ファイル名
     file_name = body.FilePath
 
@@ -33,9 +34,21 @@ async def a16_10bat_1(body: RequestBody):
     if flag_diff:
         logger.info("差分ファイル")
     else:
-        logger.info("全件ファイル")
+        copy_file(body.Bucket, file_name)
 
     return
 
-def copy_file(bucket: str, src_filename: str, dst_filename: str):
 
+def copy_file(bucket: str, filename: str):
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket)
+
+    # コピー先のオブジェクト
+    filenames = filename.split(".")
+    dst_filename = DST_FILE_FORMAT.format(filenames[0], 1, filenames[1])
+    dst_blob = bucket.blob(dst_filename)
+
+    src_blob = bucket.blob(filename)
+    bucket.copy_blob(src_blob, bucket, dst_blob.name)
+
+    logger.info(f"{dst_blob.name}生成")
