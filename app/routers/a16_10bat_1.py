@@ -9,7 +9,7 @@ from logger import Logger
 
 CONFIG_FILELIST_DIFF = "/app/config/filelist_diff.txt"
 DST_FILE_FORMAT = "{0}_PART_{1}.{2}"
-SEPARATE_COUNT = 2000000
+SEPARATE_COUNT = 1000000
 
 router = APIRouter(prefix="/1split")
 logger = Logger(log_name="a16_10bat")
@@ -63,8 +63,8 @@ def split_file(bucket_name: str, file_name: str, file_encoding: str):
                 # 指定行数以下であればメモリに書き込み
                 memory_buf.write(line)
                 index_line += 1
-                logger.mem_usage(index_line)
             else:
+                logger.mem_usage(index_line)
                 # 指定行数を越えた時点で分割してファイル出力
                 split_filenames = file_name.split(".")
                 dst_filename = DST_FILE_FORMAT.format(split_filenames[0], index_file, split_filenames[1])
